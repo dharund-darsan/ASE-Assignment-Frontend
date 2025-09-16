@@ -1,0 +1,81 @@
+
+
+=focus-ring($color, $spread: 3px, $alpha: 0.5)
+  box-shadow: 0 0 0 $spread transparentize($color, $alpha)
+=button-base
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  gap: .5rem
+  font: inherit
+  font-weight: 600
+  line-height: 1
+  border-radius: .5rem
+  padding: .65rem 1rem
+  border: 1px solid transparent
+  cursor: pointer
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease
+  text-decoration: none
+  user-select: none
+
+=button-primary
+  +button-base
+  background-color: $btn-bg
+  color: $btn-text
+  border-color: $btn-border
+
+  &:hover
+    background-color: $btn-bg-hover
+    border-color: $btn-border-hover
+
+  &:active
+    background-color: $btn-bg-active
+
+  &:focus-visible
+    +focus-ring($primary-400)
+
+  &:disabled,
+  &[aria-disabled='true']
+    background-color: $btn-bg-disabled
+    color: $text-muted
+    cursor: not-allowed
+    opacity: .8
+
+=input-base
+  display: block
+  width: 100%
+  font: inherit
+  color: $input-text
+  background-color: $input-bg
+  border: 1px solid $input-border
+  border-radius: .5rem
+  padding: .6rem .75rem
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease, color .15s ease
+
+  &::placeholder
+    color: $input-placeholder
+
+  &:hover
+    border-color: $input-border-hover
+
+  &:focus
+    border-color: $input-border-focus
+    box-shadow: $input-shadow-focus
+    outline: none
+
+  &:disabled
+    background-color: $input-disabled-bg
+    color: $input-disabled-text
+    cursor: not-allowed
+
+  &[readonly]
+    background-color: $input-readonly-bg
+    border-color: $input-readonly-border
+    color: $text-secondary
+
+// State helpers (apply with extra classes)
+=input-error
+  border-color: $input-error-border
+
+=input-success
+  border-color: $input-success-border

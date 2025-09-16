@@ -1,0 +1,35 @@
+@import '../../styles/_colors'
+@import '../../styles/_mixins'
+
+.container
+  display: flex
+  flex-direction: column
+  gap: .375rem
+  position: relative
+
+.label
+  color: $text-secondary
+  font-weight: 600
+  text-align: left
+
+.input
+  +input-base
+
+.inputError
+  +input-error
+
+.inputSuccess
+  +input-success
+
+.helperText
+  font-size: .875rem
+  color: $text-muted
+
+.errorText
+  color: $input-error-border
+
+.successText
+  color: $input-success-border
+
+.fullWidth
+  width: 100%

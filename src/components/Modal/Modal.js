@@ -1,0 +1,29 @@
+import React from "react";
+import ReactDOM from "react-dom";
+import styles from "./Modal.module.sass";
+import { IoClose } from "react-icons/io5";
+
+
+const Modal = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+
+  return ReactDOM.createPortal(
+    <div className={styles.modalBackdrop} onClick={onClose}>
+      <div
+        className={styles.modalContainer}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={styles.modalHeader}>
+          <h2>{title}</h2>
+          <button className={styles.modalClose} onClick={onClose}>
+            <IoClose />
+          </button>
+        </div>
+        <div className={styles.modalBody}>{children}</div>
+      </div>
+    </div>,
+    document.getElementById("modal-root") // ensure this exists in index.html
+  );
+};
+
+export default Modal;

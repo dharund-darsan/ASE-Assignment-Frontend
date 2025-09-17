@@ -79,3 +79,10 @@
 
 =input-success
   border-color: $input-success-border
+
+@mixin hover-effect($bg-color: #f0f0f0, $text-color: inherit, $transition: 0.2s)
+  cursor: pointer
+  transition: all $transition ease
+  &:hover
+    background-color: $bg-color
+    color: $text-color

@@ -1,0 +1,45 @@
+@import './../../styles/_colors'
+@import './../../styles/_mixins'
+
+.dateNavigator
+    display: inline-flex
+    flex-direction: row
+    justify-content: center
+    align-items: center
+    border: 1px solid $neutral-300
+    border-radius: 6px
+    overflow: hidden
+    background: $neutral-100
+
+.arrowContainer
+    display: flex
+    padding: 8px
+    @include hover-effect($bg-color: $neutral-200, $text-color: $black, $transition: 0.2s)
+
+.dateContainer 
+    display: flex
+    align-items: center
+    justify-content: center
+    flex-direction: row
+    padding: 8px
+    border-left: 1px solid $neutral-300   // left border width + color
+    border-right: 1px solid $neutral-300  // right border width + color
+    cursor: pointer
+
+.divider
+  background: $neutral-300
+  align-self: stretch
+
+.dateLabel 
+  position: relative
+  display: inline-block
+  cursor: pointer
+  border-radius: 6px
+  text-align: center
+
+
+.hiddenDateInput 
+  position: absolute
+  inset: 0 // full stretch over label
+  opacity: 0
+  cursor: pointer

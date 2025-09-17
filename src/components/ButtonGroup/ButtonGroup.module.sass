@@ -1,0 +1,33 @@
+@import '../../styles/colors'
+@import '../../styles/mixins'
+
+.buttonGroup
+  display: inline-flex
+  border: 1px solid $neutral-300
+  border-radius: 6px
+  overflow: hidden
+  background: $neutral-100
+
+.button
+  padding: 0.5rem 1rem
+  border: none
+  background: transparent
+  color: $text-primary
+  cursor: pointer
+  transition: background-color .2s ease, color .2s ease
+
+  &:hover
+    background: $neutral-200
+    color: $black
+
+  &:focus-visible
+    outline: none
+    background: $neutral-200
+
+.active
+  background: $btn-bg
+  color: $btn-text
+
+.divider
+  background: $neutral-300
+  align-self: stretch

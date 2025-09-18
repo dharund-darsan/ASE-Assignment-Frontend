@@ -1,7 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import moment from "moment";
 
-function AppointmentBlock({ appt, dayDate, hourHeight }) {
+// Single Appointment block
+function AppointmentBlock({ appt, dayDate, hourHeight, onClick }) {
   const start = moment(appt.startTime);
   const end = moment(appt.endTime);
 
@@ -17,8 +18,24 @@ function AppointmentBlock({ appt, dayDate, hourHeight }) {
   const top = (startMinutes / 60) * hourHeight;
   const height = (durationMinutes / 60) * hourHeight;
 
+  // Adjust font size dynamically
+  let titleFont = 10;
+  let timeFont = 12;
+  let padding = "6px";
+
+  if (height < 24) {
+    titleFont = 10;
+    timeFont = 9;
+    padding = "2px 4px";
+  } else if (height < 40) {
+    titleFont = 12;
+    timeFont = 10;
+    padding = "4px 6px";
+  }
+
   return (
     <div
+      onClick={() => onClick && onClick(appt)}
       style={{
         position: "absolute",
         top,
@@ -28,46 +45,60 @@ function AppointmentBlock({ appt, dayDate, hourHeight }) {
         borderRadius: 6,
         background: "#F0FDF4",
         borderLeft: `4px solid ${appt.statusColor || "#3b82f6"}`,
-        padding: "8px",
+        padding,
         boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
         overflow: "hidden",
+        display: "flex",
+        alignItems: height > 24 ? "start" : "center",
+        flexDirection: height > 24 ? "column" : "row",
+        gap: height > 24 ? "" : 6,
+        cursor: "pointer",
       }}
+      title={`${appt.title} | ${visibleStart.format("h:mm A")} - ${visibleEnd.format("h:mm A")}`}
     >
-      <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>
+      <div
+        style={{
+          fontWeight: 600,
+          fontSize: titleFont,
+          color: "#111827",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
         {appt.title}
       </div>
-      <div style={{ fontSize: 12, color: "#6b7280" }}>
+      <div style={{ fontSize: timeFont, color: "#6b7280", whiteSpace: "nowrap" }}>
         {visibleStart.format("h:mm A")} - {visibleEnd.format("h:mm A")}
       </div>
-      {appt.location && (
-        <div style={{ fontSize: 12, color: "#6b7280" }}>{appt.location}</div>
-      )}
     </div>
   );
 }
 
-export default function DayView({
-  dayDate,
-  appointments = [],
-  hourHeight = 48,
-  labelColWidth = 64,
-}) {
+// Main Day View
+export default function DayView({ dayDate, appointments = [], hourHeight = 48, labelColWidth = 64, onAppointmentClick }) {
+  const [now, setNow] = useState(moment());
+
+  // Update current time every minute
+  useEffect(() => {
+    const timer = setInterval(() => setNow(moment()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Filter appointments for the day
   const dayAppointments = useMemo(() => {
     if (!dayDate) return [];
-    return appointments.filter((a) =>
-      moment(a.startTime).isSame(dayDate, "day")
-    );
+    return appointments.filter((a) => moment(a.startTime).isSame(dayDate, "day"));
   }, [appointments, dayDate]);
 
+  // Time label helper
   const timeLabel = (halfIndex) => {
     const minutes = halfIndex * 30;
     const hour = Math.floor(minutes / 60);
     const mins = minutes % 60;
     const period = hour < 12 ? "AM" : "PM";
     const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-    return mins === 0
-      ? `${displayHour} ${period}`
-      : `${displayHour}:30 ${period}`;
+    return mins === 0 ? `${displayHour} ${period}` : `${displayHour}:30 ${period}`;
   };
 
   const containerStyle = {
@@ -84,9 +115,8 @@ export default function DayView({
     columnGap: "8px",
   };
 
-  const labelColStyle = {
-    position: "relative",
-  };
+  const labelColStyle = { position: "relative" };
+  const dayColStyle = { position: "relative" };
 
   const labelStyle = (isHalf) => ({
     position: "absolute",
@@ -98,16 +128,16 @@ export default function DayView({
     lineHeight: 1,
   });
 
-  const dayColStyle = {
-    position: "relative",
-  };
-
-  // Draw a line at every half-hour; darker for full hour
   const slotStyle = (isHalf) => ({
     borderTop: `1px solid ${isHalf ? "#e5e7eb" : "#d1d5db"}`,
     height: `${hourHeight / 2}px`,
     boxSizing: "border-box",
   });
+
+  // Current time line
+  const currentTop = now.isSame(dayDate, "day")
+    ? (now.diff(dayDate.clone().startOf("day"), "minutes") / 60) * hourHeight
+    : null;
 
   return (
     <div style={containerStyle}>
@@ -139,12 +169,68 @@ export default function DayView({
             return <div key={i} style={slotStyle(isHalf)} />;
           })}
 
+          {/* Current time indicator */}
+          {currentTop !== null && (
+            <div
+              style={{
+                position: "absolute",
+                top: currentTop,
+                left: 0,
+                right: 0,
+                zIndex: 20,
+                pointerEvents: "none",
+              }}
+            >
+              <div
+                style={{
+                  borderTop: "2px solid #ef4444",
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  left: -14,
+                  top: -6,
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  background: "#ef4444",
+                  border: "2px solid white",
+                  boxShadow: "0 0 2px rgba(0,0,0,0.2)",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  left: -60,
+                  top: -10,
+                  background: "#ef4444",
+                  color: "white",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                }}
+              >
+                {now.format("h:mm A")}
+              </div>
+            </div>
+          )}
+
+          {/* Appointments */}
           {dayAppointments.map((appt) => (
             <AppointmentBlock
               key={appt.appointmentId}
               appt={appt}
               dayDate={dayDate}
               hourHeight={hourHeight}
+              onClick={onAppointmentClick} // Return whole object to parent
             />
           ))}
         </div>

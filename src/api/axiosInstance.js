@@ -18,7 +18,24 @@ axiosInstance.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.log("Request Error:", error);
     Promise.reject(error);
+  }
+);
+
+axiosInstance.interceptors.response.use(
+  (response) => response, // Pass through successful responses
+  (error) => {
+    console.log(error.response);
+    
+    if (error.response && error.response.status === 401) {
+      // Remove invalid token
+      localStorage.removeItem("jwtToken");
+
+      // Redirect to login page
+      window.location.href = "/auth";
+    }
+    return Promise.reject(error);
   }
 );
 

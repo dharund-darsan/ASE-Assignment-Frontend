@@ -6,10 +6,13 @@ import { useState, useEffect } from "react";
 import { login, register } from "../../api/api";     
 import moment from "moment"; 
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setUserDetails } from "../../store/userSlice";
 
 
 function AuthPage() {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const tabs = [
         {
@@ -50,6 +53,8 @@ function AuthPage() {
             const response = await login(loginFormData);
             console.log("Login successful:", response);
             localStorage.setItem("jwtToken", response.data.token);
+            dispatch(setUserDetails(response.data.user));
+            localStorage.setItem("userDetails", JSON.stringify(response.data.user));
             navigate("/appointment")
         }
         catch(error){

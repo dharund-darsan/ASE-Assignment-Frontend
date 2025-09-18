@@ -32,7 +32,6 @@ export default function MonthView({
     return appointments.filter((a) => {
       const start = moment(a.startTime);
       const end = moment(a.endTime);
-      // Include if the appointment touches this day
       return (
         start.isSame(day, "day") ||
         end.isSame(day, "day") ||
@@ -47,6 +46,7 @@ export default function MonthView({
     overflow: "hidden",
     padding: "16px",
     boxSizing: "border-box",
+    fontFamily: "sans-serif",
   };
 
   const headerStyle = {
@@ -61,7 +61,7 @@ export default function MonthView({
     fontWeight: 600,
     color: "#6b7280",
     fontSize: 12,
-    padding: "8px 0",
+    padding: "6px 0",
   };
 
   const gridStyle = {
@@ -78,7 +78,7 @@ export default function MonthView({
     minHeight: cellMinHeight,
     display: "flex",
     flexDirection: "column",
-    padding: 8,
+    padding: 6, // tighter padding like Day/Week cells
     boxSizing: "border-box",
     opacity: isCurrentMonth ? 1 : 0.55,
   });
@@ -90,12 +90,7 @@ export default function MonthView({
     marginBottom: 4,
     fontSize: 12,
     fontWeight: 600,
-    color: "#111827",
-    ...(isToday
-      ? {
-          color: "#2563eb",
-        }
-      : {}),
+    color: isToday ? "#2563eb" : "#111827",
   });
 
   const todayBadgeStyle = {
@@ -111,22 +106,23 @@ export default function MonthView({
   const appointmentsListStyle = {
     display: "flex",
     flexDirection: "column",
-    gap: 4,
-    marginTop: 4,
+    gap: 2,
+    marginTop: 2,
     overflow: "hidden",
   };
 
   const apptPillStyle = (color) => ({
     display: "flex",
     alignItems: "center",
-    gap: 6,
-    padding: "4px 6px",
-    borderRadius: 6,
+    gap: 4,
+    padding: "2px 4px", // smaller pill like DayView when tight
+    borderRadius: 4,
     background: "#F9FAFB",
-    borderLeft: `4px solid ${color || "#3b82f6"}`,
-    fontSize: 12,
+    borderLeft: `3px solid ${color || "#3b82f6"}`,
+    fontSize: 11,
+    fontWeight: 500,
     color: "#111827",
-    minHeight: 24,
+    minHeight: 20,
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
@@ -134,7 +130,7 @@ export default function MonthView({
 
   const apptTimeStyle = {
     color: "#6b7280",
-    fontSize: 11,
+    fontSize: 10,
   };
 
   return (
@@ -181,7 +177,7 @@ export default function MonthView({
                   );
                 })}
                 {moreCount > 0 && (
-                  <div style={{ fontSize: 12, color: "#2563eb", fontWeight: 600 }}>
+                  <div style={{ fontSize: 11, color: "#2563eb", fontWeight: 600 }}>
                     +{moreCount} more
                   </div>
                 )}

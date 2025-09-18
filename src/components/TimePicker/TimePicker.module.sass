@@ -1,0 +1,56 @@
+@import './../../styles/_colors'
+  
+.timePicker
+  display: flex
+  justify-content: center
+  align-items: center
+  gap: 12px
+  background: #fff
+  border: 1px solid #ddd
+  border-radius: 12px
+  padding: 8px
+  width: fit-content
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08)
+  // max-height: 260px
+  overflow-y: auto
+
+.column
+  max-height: 200px
+  overflow-y: auto
+  scrollbar-width: none
+  -ms-overflow-style: none
+  flex: 1
+  text-align: center
+
+  &::-webkit-scrollbar
+    display: none
+
+.item
+  padding: 10px 12px
+  cursor: pointer
+  font-size: 14px
+  font-family: "Inter", sans-serif
+  color: #333
+  border-radius: 6px
+  transition: background 0.2s ease, color 0.2s ease
+  text-align: center
+  display: flex
+  justify-content: center
+  align-items: center
+
+  &:hover
+    background: rgba(0, 0, 0, 0.05)
+
+.selected
+  background: rgba(59,130,246,0.1)
+  color: #2f54eb
+  font-weight: 600
+  border-radius: 6px
+  text-align: center
+  display: flex
+  justify-content: center
+  align-items: center
+
+.slotItem
+  &:hover
+    background-color: $neutral-300

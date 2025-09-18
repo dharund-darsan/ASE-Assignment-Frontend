@@ -4,20 +4,138 @@
 .calendar
     width: 100%
     display: flex
-    overflow-y: hidden
-    
+
+$sidebar-expanded-width: 300px
+$sidebar-collapsed-width: 56px
+$bg: #ffffff
+$muted: #6b7280
+$border: #e5e7eb
+$accent: #2563eb
 
 .leftContainer
-    width: 30%
-    background-color: $btn-bg
+    display: flex
+    flex-direction: column
+    background: $bg
+    border-right: 1px solid $border
+    transition: width 200ms ease
+    overflow: hidden
+
+.sidebarOpen
+    width: $sidebar-expanded-width
+
+.sidebarClosed
+    width: $sidebar-collapsed-width
+
+/* Expanded content */
+.sidebarContent
+    display: flex
+    flex-direction: column
+    height: 100%
+    padding: 12px
+
+/* Collapsed content */
+.sidebarCollapsed
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: flex-start
+    gap: 8px
+    padding: 8px 0
+
+/* Only show one content block depending on state */
+.sidebarOpen .sidebarCollapsed
+    display: none
+
+.sidebarClosed .sidebarContent
+    display: none
+
+.sidebarHeader
+    display: flex
+    align-items: center
+    justify-content: space-between
+    margin-bottom: 8px
+
+.sidebarToggle
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    width: 32px
+    height: 32px
+    border: 1px solid $border
+    background: #f9fafb
+    border-radius: 6px
+    cursor: pointer
+    color: $muted
+    transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease
+    &:hover
+        background: $neutral-300
+        color: $black
+        border-color: $primary-300
+
+.sidebarList
+    overflow-y: auto
+    flex: 1
+
+.noAppointments
+    color: $muted
+    font-size: 14px
+    padding: 8px
+
+/* Collapsed indicators */
+.collapsedBadge
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    width: 28px
+    height: 28px
+    border-radius: 9999px
+    background: $neutral-200
+    color: $primary-100
+    font-weight: 600
+    font-size: 12px
+    border: 1px solid $primary-400
+
+.collapsedList
+    display: flex
+    flex-direction: column
+    align-items: center
+    gap: 8px
+    padding: 8px 0
+
+.apptDot
+    width: 8px
+    height: 8px
+    border-radius: 9999px
+    background: $primary-200
+    cursor: pointer
+    &:hover
+        transform: scale(1.15)
 
 .rightContainer
     width: 70%
+    height: 100vh
     background-color: $btn-border
+    flex: 1
+    min-width: 0
+    display: flex
+    flex-direction: column
 
 .topContainer 
     display: flex
     flex-direction: row
     justify-content: space-between
     align-items: center
-    margin: 8px 8px 8px 8px
+    margin: 8px
+    gap: 12px
+
+.topActions
+    display: flex
+    gap: 8px
+
+.dividerWrapper
+    width: 95%
+    align-self: center
+
+.calendarContent
+    max-height: calc(100vh - 120px)
+    overflow-y: auto

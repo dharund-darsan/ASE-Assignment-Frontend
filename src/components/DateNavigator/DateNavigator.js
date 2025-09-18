@@ -5,7 +5,7 @@ import React, { useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setFromAndToDate } from '../../store/CalendarSlice';
 
-const DateNavigator = React.memo(({ selectedFrequency }) => {
+const DateNavigator = React.memo(({ selectedFrequency, onDateChange }) => {
   const dispatch = useDispatch();
 
   const fromDate = useSelector((state) => state.calendar.fromDate);
@@ -55,44 +55,48 @@ const DateNavigator = React.memo(({ selectedFrequency }) => {
       fromDate: pickedDate.startOf('day').toISOString(),
       toDate: pickedDate.endOf('day').toISOString(),
     }));
+    onDateChange?.(pickedDate.startOf('day'), pickedDate.endOf('day'));
   };
 
   const handleForwardDateChange = () => {
+    let fromDate;
+    let toDate;
+
     if (selectedFrequency === 'day') {
-      dispatch(setFromAndToDate({
-        fromDate: selectedFromDate.clone().add(1, 'day').startOf('day').toISOString(),
-        toDate: selectedToDate.clone().add(1, 'day').endOf('day').toISOString(),
-      }));
+      fromDate = selectedFromDate.clone().add(1, 'day').startOf('day');
+      toDate = selectedToDate.clone().add(1, 'day').endOf('day')
     } else if (selectedFrequency === 'week') {
-      dispatch(setFromAndToDate({
-        fromDate: selectedFromDate.clone().add(1, 'week').startOf('week').toISOString(),
-        toDate: selectedToDate.clone().add(1, 'week').endOf('week').toISOString(),
-      }));
+      fromDate = selectedFromDate.clone().add(1, 'week').startOf('week');
+      toDate = selectedToDate.clone().add(1, 'week').endOf('week');
     } else if (selectedFrequency === 'month') {
-      dispatch(setFromAndToDate({
-        fromDate: selectedFromDate.clone().add(1, 'month').startOf('month').toISOString(),
-        toDate: selectedToDate.clone().add(1, 'month').endOf('month').toISOString(),
-      }));
+      fromDate = selectedFromDate.clone().add(1, 'month').startOf('month');
+      toDate = selectedToDate.clone().add(1, 'month').endOf('month');
     }
+    dispatch(setFromAndToDate({
+        fromDate: fromDate.toISOString(),
+        toDate: toDate.toISOString()
+    }));
+    onDateChange?.(fromDate, toDate)
   };
 
   const handleBackwardDateChange = () => {
+    let fromDate;
+    let toDate;
     if (selectedFrequency === 'day') {
-      dispatch(setFromAndToDate({
-        fromDate: selectedFromDate.clone().subtract(1, 'day').startOf('day').toISOString(),
-        toDate: selectedToDate.clone().subtract(1, 'day').endOf('day').toISOString(),
-      }));
+      fromDate = selectedFromDate.clone().subtract(1, 'day').startOf('day');
+      toDate = selectedToDate.clone().subtract(1, 'day').endOf('day');
     } else if (selectedFrequency === 'week') {
-      dispatch(setFromAndToDate({
-        fromDate: selectedFromDate.clone().subtract(1, 'week').startOf('week').toISOString(),
-        toDate: selectedToDate.clone().subtract(1, 'week').endOf('week').toISOString(),
-      }));
+      fromDate = selectedFromDate.clone().subtract(1, 'week').startOf('week');
+      toDate = selectedToDate.clone().subtract(1, 'week').endOf('week');
     } else if (selectedFrequency === 'month') {
-      dispatch(setFromAndToDate({
-        fromDate: selectedFromDate.clone().subtract(1, 'month').startOf('month').toISOString(),
-        toDate: selectedToDate.clone().subtract(1, 'month').endOf('month').toISOString(),
-      }));
+      fromDate = selectedFromDate.clone().subtract(1, 'month').startOf('month');
+      toDate = selectedToDate.clone().subtract(1, 'month').endOf('month');
     }
+    dispatch(setFromAndToDate({
+        fromDate: fromDate.toISOString(),
+        toDate: toDate.toISOString()
+    }));
+    onDateChange?.(fromDate, toDate);
   };
 
   useEffect(() => {

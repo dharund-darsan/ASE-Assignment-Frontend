@@ -12,6 +12,7 @@ const apiRequest = async (method, url, data = {}, params = {}) => {
     });
     return response;
   } catch (error) {
+    console.log("API Error:", error);
     if(error.status === 401) {
       localStorage.removeItem("jwtToken");
       window.location.href = "/auth";

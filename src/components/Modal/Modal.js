@@ -4,7 +4,7 @@ import styles from "./Modal.module.sass";
 import { IoClose } from "react-icons/io5";
 
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, children, modalBody }) => {
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
@@ -19,7 +19,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
             <IoClose />
           </button>
         </div>
-        <div className={styles.modalBody}>{children}</div>
+        <div className={[styles.modalBody, 'modal-body', modalBody].join(" ")}>{children}</div>
       </div>
     </div>,
     document.getElementById("modal-root") // ensure this exists in index.html

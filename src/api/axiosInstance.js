@@ -31,6 +31,7 @@ axiosInstance.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Remove invalid token
       localStorage.removeItem("jwtToken");
+      localStorage.removeItem("userDetails");
 
       // Redirect to login page
       window.location.href = "/auth";

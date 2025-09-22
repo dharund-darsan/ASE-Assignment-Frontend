@@ -23,7 +23,7 @@ function AppointmentBlock({ appt, dayDate, hourHeight, onClick }) {
   let timeFont = 12;
   let padding = "6px";
 
-  if (height < 24) {
+  if (height < 30) {
     titleFont = 10;
     timeFont = 9;
     padding = "2px 4px";
@@ -87,9 +87,18 @@ export default function DayView({ dayDate, appointments = [], hourHeight = 48, l
 
   // Filter appointments for the day
   const dayAppointments = useMemo(() => {
-    if (!dayDate) return [];
-    return appointments.filter((a) => moment(a.startTime).isSame(dayDate, "day"));
-  }, [appointments, dayDate]);
+  if (!dayDate) return [];
+  return appointments.filter((a) => {
+    const start = moment(a.startTime);
+    const end = moment(a.endTime);
+    const dayStart = dayDate.clone().startOf("day");
+    const dayEnd = dayDate.clone().endOf("day");
+
+    // Return true if the appointment overlaps the day
+    return end.isAfter(dayStart) && start.isBefore(dayEnd);
+  });
+}, [appointments, dayDate]);
+
 
   // Time label helper
   const timeLabel = (halfIndex) => {

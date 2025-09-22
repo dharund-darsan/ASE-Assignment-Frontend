@@ -10,7 +10,7 @@ const TimePicker = ({
   onCancel,
   hour12 = true,
   minuteStep = 15,
-  initialMode = "picker", // "picker" | "list"
+  initialMode = "list", // "picker" | "list"
 }) => {
   const initial = useMemo(() => (value ? moment(value) : moment()), [value]);
 
@@ -78,7 +78,7 @@ const TimePicker = ({
     <div className={styles.timePicker} style={{ display: "grid", gap: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ fontWeight: 600 }}>{selected.format(hour12 ? "hh:mm A" : "HH:mm")}</div>
-        <Button variant="ghost" onClick={() => setMode((m) => (m === "picker" ? "list" : "picker"))}>
+        <Button variant="link" onClick={() => setMode((m) => (m === "picker" ? "list" : "picker"))} style={{margin: '0px 12px'}}>
           {mode === "picker" ? "Switch to List" : "Switch to Picker"}
         </Button>
       </div>

@@ -1,7 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useLayoutEffect } from 'react';
 import styles from './TextInput.module.sass';
-import TimePicker from '../TimePicker/TimePicker'; // add custom time picker
-import DropdownPortal from '../../DropdownPortal';
+import TimePicker from '../TimePicker/TimePicker';
+import Dropdown from '../Dropdown/Dropdown';
+import { RxAvatar } from "react-icons/rx";
+import { IoClose } from "react-icons/io5";
+
+
 
 const TextInput = function TextInput({
   id,
@@ -25,6 +29,7 @@ const TextInput = function TextInput({
   multiple = false,
   searchable = true,
   noOptionsText = 'No options',
+  avatar = false,
   ...props
 }) {
   const [isFocused, setIsFocused] = useState(false);
@@ -62,6 +67,10 @@ const TextInput = function TextInput({
   const [query, setQuery] = useState('');
   const dropdownRef = useRef(null);
 
+  const [calculatedPosition, setCalculatedPosition] = useState('bottom');
+  const [readyToShow, setReadyToShow] = useState(false);
+
+
   const selectedValues = useMemo(() => {
     if (multiple) return Array.isArray(value) ? value : [];
     return value === undefined || value === null ? null : value;
@@ -82,9 +91,36 @@ const TextInput = function TextInput({
   }, [options, searchable, query]);
 
   const toggleDropdown = () => {
-    if (disabled || readOnly) return;
-    setIsOpen(v => !v);
-  };
+  if (disabled || readOnly) return;
+
+  if (!openDropdown && inputRef.current) {
+    setReadyToShow(false); // hide until positioned
+    setOpenDropdown(true);
+  } else {
+    setOpenDropdown(false);
+  }
+};
+
+
+
+useLayoutEffect(() => {
+  if (!openDropdown || !inputRef.current || !dropdownRef.current) return;
+
+  const inputRect = inputRef.current.getBoundingClientRect();
+  const dropdownHeight = dropdownRef.current.offsetHeight;
+
+  const spaceBelow = window.innerHeight - inputRect.bottom;
+  const spaceAbove = inputRect.top;
+
+  setCalculatedPosition(
+    spaceBelow < dropdownHeight && spaceAbove > dropdownHeight ? 'top' : 'bottom'
+  );
+
+  // now ready to show
+  setReadyToShow(true);
+}, [openDropdown, filteredOptions.length]);
+
+
 
   const closeDropdown = () => setIsOpen(false);
 
@@ -181,6 +217,7 @@ useEffect(() => {
 
 
 
+
   return (
     <div className={containerClass}>
       {label && (
@@ -238,14 +275,14 @@ useEffect(() => {
           style={{ resize: 'vertical', ...props.style }}
         />
       ) : type === 'time' ? (
-        <>
+  <>
     <div
       ref={inputRef}
       id={id}
       role="button"
       tabIndex={0}
       className={inputClass}
-      onClick={() => {setOpenDropdown((o) => !o); console.log(openDropdown)}}   // 👈 toggle dropdown
+      onClick={() => toggleDropdown()} // toggle dropdown
       style={{
         minHeight: 42,
         display: "flex",
@@ -261,52 +298,30 @@ useEffect(() => {
       </span>
     </div>
 
-    {openDropdown && !disabled && (
-  <DropdownPortal>
-    <div
-      ref={dropdownRef}
-      style={{
-        position: "fixed",
-        top:
-          dropdownPosition === "bottom"
-            ? (inputRef.current?.getBoundingClientRect().bottom ?? 0) + 6
-            : (inputRef.current?.getBoundingClientRect().top ?? 0) -
-              (dropdownRef.current?.offsetHeight ?? 250) -
-              6,
-        left:
-          (inputRef.current?.getBoundingClientRect().left ?? 0) +
-          window.scrollX,
-        zIndex: 2000,
-        background: "#fff",
-        border: "1px solid #ddd",
-        borderRadius: 8,
-        boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
-      }}
+    <Dropdown
+      anchorRef={inputRef}
+      isOpen={openDropdown}
+      onClose={() => setOpenDropdown(false)}
     >
       <TimePicker
         value={value}
-        onSave={(m) => {
-          onChange?.(m);
-          setOpenDropdown(false);
-        }}
+        onSave={(m) => { onChange?.(m); setOpenDropdown(false); }}
         onCancel={() => setOpenDropdown(false)}
         hour12={hour12}
       />
-    </div>
-  </DropdownPortal>
-)}
+    </Dropdown>
   </>
-
-      ) : type === 'select' ? (
-        <div ref={dropdownRef} style={{ position: 'relative' }} >
+)
+      
+      : type === 'select' ? (
+  <>
     <div
+      ref={inputRef}
       id={id}
       role="button"
       tabIndex={0}
       className={inputClass}
       onClick={toggleDropdown}
-      onFocus={() => setIsFocused(true)}
-      onBlur={() => setIsFocused(false)}
       style={{
         minHeight: 42,
         display: 'flex',
@@ -317,148 +332,61 @@ useEffect(() => {
         padding: multiple ? '0px' : '0.6rem 0.75rem'
       }}
     >
-      {/* Selected items */}
-      {multiple ? (
-  <div
-    ref={inputRef}
-    // className={`${styles.input} ${isFocused ? styles.inputFocus : ''}`}
-    // style={{
-    //   display: 'flex',
-    //   flexWrap: 'wrap',
-    //   alignItems: 'center',
-    //   gap: 4,
-    //   minHeight: 42,
-    //   cursor: disabled || readOnly ? 'not-allowed' : 'text',
-    //   opacity: disabled || readOnly ? 0.6 : 1,
-    //   backgroundColor: 'black'
-    // }}
-    // onClick={() => {
-    //   if (!disabled && !readOnly) {
-    //     setIsOpen(true);
-    //     inputRef.current?.focus();
-    //   }
-    // }}
-    // onFocus={() => setIsFocused(true)}
-    // onBlur={() => setIsFocused(false)}
-    style={{width: '100%'}}
-  >
-    {/* Selected tags */}
-    {(selectedItems || []).map(item => (
-      <span
-        key={`tag-${item.value}`}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 4,
-          padding: '4px 8px',
-          borderRadius: 12,
-          background: '#f0f0f0',
-          fontSize: 12,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {item.label}
-        {!readOnly && !disabled && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              removeTag(item.value);
-            }}
-            style={{
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              fontWeight: 700,
-            }}
-          >
-            ×
-          </button>
-        )}
-      </span>
-    ))}
+      {multiple
+        ? (selectedItems || []).map(item => (
+            <span key={item.value} style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '4px 8px',
+              borderRadius: 6,
+              background: '#f0f0f0',
+              fontSize: 16,
+              marginLeft: 4,
 
-    {/* Search input */}
-    {searchable && !readOnly && !disabled && (
-      <input
-      // ref={inputRef}
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setIsOpen(true);
-        }}
-        placeholder={(selectedItems || []).length ? '' : placeholder}
-        style={{
-          border: 'none',
-          outline: 'none',
-          flex: 1,
-          padding: 4,
-          background: 'transparent',
-          margin: 2,
-          width: '100%'
-
-        }}
-        // onClick={(e) => e.stopPropagation()}
-        onFocus={() => setIsFocused(true)}
-      onBlur={() => setIsFocused(false)}
-      />
-    )}
-  </div>
-) : (
-  <span style={{ flex: 1, textAlign: 'left', color: selectedItems ? 'inherit' : '#888' }}>
-    {selectedItems ? selectedItems.label : (placeholder || 'Select...')}
-  </span>
-)}
-
-
+            }}>
+              <RxAvatar />
+              {item.label}
+              {!readOnly && !disabled && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeTag(item.value); }}
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: 700 }}
+                ><IoClose /></button>
+              )}
+            </span>
+          ))
+        : <span style={{ flex: 1, textAlign: 'left', color: selectedItems ? 'inherit' : '#888' }}>
+            {selectedItems ? selectedItems.label : (placeholder || 'Select...')}
+          </span>
+      }
     </div>
 
-    {/* Dropdown */}
-    {isOpen && (
-      <div
-        style={{
-          position: 'absolute',
-          top: 'calc(100% + 6px)',
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          background: '#fff',
-          border: '1px solid #ddd',
-          borderRadius: 8,
-          boxShadow: '0 6px 20px rgba(0,0,0,0.08)',
-          maxHeight: 200,
-          overflowY: 'auto',
-        }}
-      >
-        {/* Search bar for single select */}
-        {!multiple && searchable && (
-          <div style={{ padding: 8, borderBottom: '1px solid #eee' }}>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search..."
-              style={{
-                width: '100%',
-                padding: '8px 10px',
-                borderRadius: 6,
-                border: '1px solid #ddd',
-                outline: 'none',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        )}
+    <Dropdown
+      anchorRef={inputRef}
+      isOpen={openDropdown}
+      onClose={() => setOpenDropdown(false)}
+    >
+      {searchable && !multiple && (
+        <div style={{ padding: 8, borderBottom: '1px solid #eee' }}>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search..."
+            style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #ddd', outline: 'none' }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
-        {/* Options */}
-        <div>
-          {filteredOptions.length === 0 ? (
-            <div style={{ padding: 12, color: '#888' }}>{noOptionsText}</div>
-          ) : (
-            filteredOptions.map(opt => {
+      <div>
+        {filteredOptions.length === 0
+          ? <div style={{ padding: 12, color: '#888' }}>{noOptionsText}</div>
+          : filteredOptions.map(opt => {
               const isSelected = multiple
-                ? (selectedValues || []).includes(opt.value)
+                ? selectedValues.includes(opt.value)
                 : selectedValues === opt.value;
+
               return (
                 <div
                   key={opt.value}
@@ -473,25 +401,17 @@ useEffect(() => {
                     gap: 8,
                   }}
                 >
-                  {multiple && (
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      readOnly
-                      style={{ pointerEvents: 'none' }}
-                      
-                    />
-                  )}
+                  {multiple && <input type="checkbox" checked={isSelected} readOnly style={{ pointerEvents: 'none' }} />}
                   <span>{opt.label}</span>
                 </div>
               );
-            })
-          )}
-        </div>
+          })}
       </div>
-    )}
-  </div>
-      ) : (
+    </Dropdown>
+  </>
+)
+      
+      : (
         <input
           id={id}
           name={name}

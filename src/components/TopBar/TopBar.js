@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import styles from './TopBar.module.sass';
 import { TbLogout } from "react-icons/tb";
 import Modal from "../Modal/Modal";
-import Divider from "../Divider/DIvider";
+import Divider from "../Divider/Divider";
 import Button from "../Button/Button";
-import { SiQbittorrent } from "react-icons/si";
+import { FaCalendarCheck } from "react-icons/fa";
+import { showToast } from "../Toast/Toast";
 
 
 
@@ -14,20 +15,24 @@ const TopBar = () => {
 
 
   const handleLogout = () => {
-    localStorage.removeItem("userDetails");
-    localStorage.removeItem("jwtToken");
-    window.location.href = "/";
+    const toast = showToast("Logged out successfully", "success", false);
+    setTimeout(() => {
+      localStorage.removeItem("userDetails");
+      localStorage.removeItem("jwtToken");
+      window.location.href = "/";
+    }, 300)
   };
   
 
   return (
+    <>
     <div className={styles.topBar}>
       <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-        <SiQbittorrent style={{width: 25, height: 25}}/>
+        <FaCalendarCheck style={{width: 25, height: 25}}/>
         <h2>QuickBook</h2>
       </div>
       <div>
-        <TbLogout width={30} height={30} style={{width: 25, height: 25}} onClick={() => setconfirmationModalVisibility(true)}/>
+        <TbLogout className={styles.logoutIcon} onClick={() => setconfirmationModalVisibility(true)}/>
 
       </div>
       <Modal
@@ -54,6 +59,8 @@ const TopBar = () => {
 
       </Modal>
     </div>
+    <Divider />
+    </>
   );
 };
 

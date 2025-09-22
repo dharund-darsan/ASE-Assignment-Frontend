@@ -28,22 +28,23 @@ const DateNavigator = React.memo(({ selectedFrequency, onDateChange }) => {
 
   // Reset when frequency changes
   useEffect(() => {
+    let fromDate;
+    let toDate;
     if (selectedFrequency === 'day') {
-      dispatch(setFromAndToDate({
-        fromDate: moment().startOf('day').toISOString(),
-        toDate: moment().endOf('day').toISOString(),
-      }));
+      fromDate = moment().startOf('day');
+      toDate = moment().endOf('day');
     } else if (selectedFrequency === 'week') {
-      dispatch(setFromAndToDate({
-        fromDate: moment().startOf('week').toISOString(),
-        toDate: moment().endOf('week').toISOString(),
-      }));
+      fromDate = moment().startOf('week');
+      toDate = moment().endOf('week');
     } else if (selectedFrequency === 'month') {
-      dispatch(setFromAndToDate({
-        fromDate: moment().startOf('month').toISOString(),
-        toDate: moment().endOf('month').toISOString(),
-      }));
+      fromDate = moment().startOf('month');
+      toDate = moment().endOf('month');
     }
+    dispatch(setFromAndToDate({
+        fromDate: fromDate.toISOString(),
+        toDate: toDate.toISOString(),
+      }));
+    // onDateChange?.(fromDate, toDate);
   }, [selectedFrequency, dispatch]);
 
   

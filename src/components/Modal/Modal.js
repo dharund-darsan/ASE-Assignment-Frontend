@@ -3,14 +3,13 @@ import ReactDOM from "react-dom";
 import styles from "./Modal.module.sass";
 import { IoClose } from "react-icons/io5";
 
-
-const Modal = ({ isOpen, onClose, title, children, modalBody }) => {
+const Modal = ({ isOpen , onClose, title, children, modalBody, fullScreen = false, animation = 'fadeIn' }) => {
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
     <div className={styles.modalBackdrop} onClick={onClose}>
       <div
-        className={styles.modalContainer}
+        className={`${styles.modalContainer} ${fullScreen ? styles.fullScreen : ""} ${styles[animation]}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.modalHeader}>
@@ -19,10 +18,12 @@ const Modal = ({ isOpen, onClose, title, children, modalBody }) => {
             <IoClose />
           </button>
         </div>
-        <div className={[styles.modalBody, 'modal-body', modalBody].join(" ")}>{children}</div>
+        <div className={[styles.modalBody, "modal-body", modalBody].join(" ")}>
+          {children}
+        </div>
       </div>
     </div>,
-    document.getElementById("modal-root") // ensure this exists in index.html
+    document.getElementById("modal-root")
   );
 };
 

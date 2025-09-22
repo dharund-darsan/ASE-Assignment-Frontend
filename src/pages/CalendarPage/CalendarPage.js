@@ -3,7 +3,7 @@ import styles from "./CalendarPage.module.sass";
 import ButtonGroup from "../../components/ButtonGroup/ButtonGroup";
 import DateNavigator from "../../components/DateNavigator/DateNavigator";
 import Button from "./../../components/Button/Button";
-import Divider from "../../components/Divider/DIvider";
+import Divider from "../../components/Divider/Divider";
 import moment from "moment";
 import { useSelector, useDispatch } from "react-redux";
 import DayView from "../../components/Calendar/DayView";
@@ -14,16 +14,21 @@ import { showToast } from "./../../components/Toast/Toast";
 import AppointmentModal from "../../components/AppointmentModal/AppointmentModal";
 import AppointmentListItem from "../../components/AppointmentListItem/AppointmentListItem";
 import { FiSidebar } from "react-icons/fi";
+import { useIsMobile } from "../../hooks/useIsMobile";
+import Sidebar from "../../components/Sidebar/Sidebar";
+import SidebarContent from "./SidebarContent";
+import { FaPlus } from "react-icons/fa6";
 
 
 function CalendarPage() {
   const dispatch = useDispatch();
 
   const [selectedView, setSelectedView] = useState("day");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   function changeCalendarView(view) {
     setSelectedView(view.toLowerCase());
+    // getAppointmentListForTheDate();
   }
 
   const fromDate = useSelector((state) => state.calendar.fromDate);
@@ -50,9 +55,15 @@ function CalendarPage() {
       })
       .catch(() => setCustomers([]));
 
-    getAppointmentListForTheDate();
+    // getAppointmentListForTheDate();
     setUserDetails(JSON.parse(localStorage.getItem("userDetails")) || null);
   }, []);
+
+  
+
+  useEffect(() => {
+    getAppointmentListForTheDate();
+  }, [fromDate]);
 
   function getAppointmentListForTheDate(from_date = "", to_date = "") {
     const from = moment(from_date == "" ? fromDate : from_date)
@@ -81,7 +92,9 @@ function CalendarPage() {
   }
 
   function onCreateAppointment(data) {
+    let toast;
     if (mode === "edit") {
+      toast = showToast("Editing appointment", null, true);
       const filteredAppointment = Object.fromEntries(
         Object.entries(data).filter(
           ([_, value]) =>
@@ -90,22 +103,25 @@ function CalendarPage() {
       );
       updateAppointment({ ...filteredAppointment, statusId: 1 })
         .then((res) => {
-          showToast("success", "Appointment updated successfully!");
+          // showToast("success", "Appointment updated successfully!");
           closeCreateAppointmentModal();
           getAppointmentListForTheDate();
+          toast.update(false, "Appointment updated successfully", "success");
         })
         .catch((err) => {
-          showToast("error", "Error updating appointment!");
+          toast.update(false, err?.response?.data?.message ?? "Error upadating Appointment", "failure");
         });
     } else {
+      toast = showToast("creating appointment", null, true);
       createAppointment({ ...data, statusId: 1 })
         .then((res) => {
           showToast("success", "Appointment created successfully!");
           closeCreateAppointmentModal();
           getAppointmentListForTheDate();
+          toast.update(false, "Appointment created successfully", "success");
         })
         .catch((err) => {
-          showToast("error", "Error creating appointment!");
+          toast.update(false, err?.response?.data?.message ?? "Error creating Appointment", "failure");
         });
     }
   }
@@ -127,7 +143,7 @@ function CalendarPage() {
         getAppointmentListForTheDate();
       })
       .catch((err) => {
-        showToast("error", "Error cancelling appointment!");
+        showToast("failure", "Error cancelling appointment!");
         closeCreateAppointmentModal();
       });
   };
@@ -140,43 +156,23 @@ function CalendarPage() {
       .slice(0, 10);
   }, [appointments]);
 
+  const isMobile = useIsMobile();
+
   return (
     <div className={styles.calendar}>
       {/* Sidebar */}
-      <div
+      {!isMobile && <div
         className={`${styles.leftContainer} ${
           sidebarOpen ? styles.sidebarOpen : styles.sidebarClosed
         }`}
+
       >
         {/* Expanded content */}
-        <div className={styles.sidebarContent}>
-          <div className={styles.sidebarHeader}>
-            <h3>Upcoming Appointments</h3>
-            <button
-              type="button"
-              className={styles.sidebarToggle}
-              aria-label="Collapse sidebar"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <FiSidebar />
-            </button>
-          </div>
-          <div className={styles.sidebarList}>
-            {upcomingAppointments.length === 0 ? (
-              <div className={styles.noAppointments}>
-                No upcoming appointments
-              </div>
-            ) : (
-              upcomingAppointments.map((appt) => (
-                <AppointmentListItem
-                  key={appt.appointmentId}
-                  appt={appt}
-                  onClick={handleAppointmentSelect}
-                />
-              ))
-            )}
-          </div>
-        </div>
+        {sidebarOpen && <SidebarContent 
+          upcomingAppointments={upcomingAppointments}
+          setSidebarOpen={setSidebarOpen}
+          handleAppointmentSelect={handleAppointmentSelect}
+        />}
 
         {/* Collapsed minimal content */}
         <div className={styles.sidebarCollapsed}>
@@ -214,25 +210,37 @@ function CalendarPage() {
             ))}
           </div>
         </div>
-      </div>
+      </div> }
 
       {/* Main content */}
       <div className={styles.rightContainer}>
         <div className={styles.topContainer}>
+          {
+            isMobile ?
+            <button
+              type="button"
+              className={styles.sidebarToggle}
+              aria-label="Collapse sidebar"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <FiSidebar />
+            </button> : <></>
+          }
           <ButtonGroup
             items={["Day", "Week", "Month"]}
             onSelect={changeCalendarView}
             selectedItem="Day"
+            changeResolution={isMobile ? true : false}
           />
           <DateNavigator
             selectedFrequency={selectedView}
-            onDateChange={getAppointmentListForTheDate}
+            // onDateChange={getAppointmentListForTheDate}
           />
-          <div className={styles.topActions}>
+          {!isMobile && <div className={styles.topActions}>
             <Button onClick={openCreateAppointmentModal}>
               Create Appointment
             </Button>
-          </div>
+          </div>}
         </div>
 
         <div className={styles.dividerWrapper}>
@@ -249,13 +257,18 @@ function CalendarPage() {
           )}
 
           {selectedView === "week" && (
-            <WeekView weekDate={selectedFromDate} appointments={appointments} />
+            <WeekView 
+              weekDate={selectedFromDate} 
+              appointments={appointments} 
+              onAppointmentClick={handleAppointmentSelect} 
+            />
           )}
 
           {selectedView === "month" && (
             <MonthView
               monthDate={selectedFromDate}
               appointments={appointments}
+              onAppointmentClick={handleAppointmentSelect}
             />
           )}
         </div>
@@ -270,6 +283,21 @@ function CalendarPage() {
         appointment={mode === "create" ? [] : appointment}
         onDelete={onCancelAppointment}
       />
+
+      {
+          sidebarOpen && isMobile && <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} side="left">
+            <SidebarContent 
+              upcomingAppointments={upcomingAppointments}
+              setSidebarOpen={setSidebarOpen}
+              handleAppointmentSelect={handleAppointmentSelect}
+            />
+          </Sidebar>
+      }
+      {
+        isMobile && <Button onClick={openCreateAppointmentModal} className={styles.createAppointmentMobile}>
+                <FaPlus />
+            </Button>
+      }
     </div>
   );
 }

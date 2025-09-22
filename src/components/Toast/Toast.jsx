@@ -1,67 +1,95 @@
-import React, { useEffect } from "react";
-import ReactDOM from "react-dom";
-import styles from "./Toast.module.sass";
+import React, { useEffect, useState } from "react"
+import { createRoot } from "react-dom/client"
+import styles from "./Toast.module.sass"
 
-function Toast({ type = "success", message, duration = 3000, onClose }) {
+function Toast({ type = "success", message, isLoading = false, onClose }) {
+  const [loading, setLoading] = useState(isLoading)
+  const [done, setDone] = useState(false)
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose?.();
-    }, duration);
-    return () => clearTimeout(timer);
-  }, [duration, onClose]);
+    if (!loading) {
+      setDone(true)
+      const timer = setTimeout(() => onClose?.(), 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [loading, onClose])
+
+  useEffect(() => {
+    setLoading(isLoading)
+  }, [isLoading])
+
+  let iconElement
+  if (loading) {
+    iconElement = (
+      <span
+        className={`${styles.icon} ${styles.loader}`}
+        style={{ borderTopColor: "#2c2f2dff" }}
+      ></span>
+    )
+  } else {
+    iconElement =
+      type === "success" ? (
+        <div className={styles["tick-circle"]}>
+          <div className={styles.tick}></div>
+        </div>
+      ) : (
+        <div className={styles["alert-circle"]}>!</div>
+      )
+  }
 
   return (
-    <div className={`${styles.toast} ${styles[type]}`}>
-      <span className={styles.icon}>
-        {type === "success" ? "🟢" : "🔴"}
-      </span>
+    <div className={`${styles.toast} ${done ? styles[type] : ""}`}>
+      {iconElement}
       <span className={styles.message}>{message}</span>
       <button className={styles.closeBtn} onClick={onClose}>
         ×
       </button>
     </div>
-  );
+  )
 }
 
-// Create or reuse toast root
-let toastRoot = document.getElementById("toast-root");
+// --- Toast Portal Setup ---
+let toastRoot = document.getElementById("toast-root")
 if (!toastRoot) {
-  toastRoot = document.createElement("div");
-  toastRoot.id = "toast-root";
-  document.body.appendChild(toastRoot);
-
-  // Ensure toast root is fixed to top-right
+  toastRoot = document.createElement("div")
+  toastRoot.id = "toast-root"
   Object.assign(toastRoot.style, {
     position: "fixed",
     top: "20px",
     right: "20px",
     zIndex: 9999,
-  });
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  })
+  document.body.appendChild(toastRoot)
 }
 
-let currentToast = null;
+// ✅ Create root only once
+const root = createRoot(toastRoot)
 
-export function showToast(type, message, duration = 3000) {
-  // remove old toast if exists
-  if (currentToast) {
-    ReactDOM.unmountComponentAtNode(toastRoot);
-    currentToast = null;
+export function showToast(message, type = "success", isLoading = true) {
+  const handleClose = () => {
+    root.render(null) // just clear instead of unmounting root
   }
 
-  const handleClose = () => {
-    ReactDOM.unmountComponentAtNode(toastRoot);
-    currentToast = null;
-  };
+  const render = (msg, toastType, loading) => {
+    root.render(
+      <Toast
+        type={toastType}
+        message={msg}
+        isLoading={loading}
+        onClose={handleClose}
+      />
+    )
+  }
 
-  const toastElement = (
-    <Toast
-      type={type}
-      message={message}
-      duration={duration}
-      onClose={handleClose}
-    />
-  );
+  render(message, type, isLoading)
 
-  ReactDOM.render(toastElement, toastRoot);
-  currentToast = toastElement;
+  return {
+    update: (loading, newMessage, newType) => {
+      render(newMessage || message, newType || type, loading)
+    },
+    close: handleClose,
+  }
 }

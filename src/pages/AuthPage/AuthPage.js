@@ -8,7 +8,9 @@ import moment from "moment";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setUserDetails } from "../../store/userSlice";
-
+import { useIsMobile } from "../../hooks/useIsMobile";
+import { FaCalendarCheck } from "react-icons/fa";
+import { showToast } from "../../components/Toast/Toast";
 
 function AuthPage() {
     const navigate = useNavigate();
@@ -47,33 +49,46 @@ function AuthPage() {
 
     // Right container auth tab: login or signup
     const [authTab, setAuthTab] = useState("login"); // "login" | "signup"
+    const isMobile = useIsMobile();
 
     async function handleLogin() {
+        let toast;
         try {
+            toast = showToast("Logging in", null, true);
             const response = await login(loginFormData);
             console.log("Login successful:", response);
             localStorage.setItem("jwtToken", response.data.token);
             dispatch(setUserDetails(response.data.user));
             localStorage.setItem("userDetails", JSON.stringify(response.data.user));
+            toast.update(false, "Login success", "success");
             navigate("/appointment")
         }
         catch(error){
+            toast.update(false, "Login failed", "failure");
             console.error("Error in handleLogin:", error);
         }
     }
 
     async function handleRegister() {
+        let toast;
         try {
-            const response = await register(registerFormData);
+            toast = showToast("Registering user", null, true);
+            const response = await register({...registerFormData, firstName: registerFormData.name, lastName: ''});
             console.log("Register successful:", response);
+            toast.update(false, "Successfully registered", "success");
         }
         catch(error){
+            toast.update(false, "Failed to register", "failure");
             console.error("Error in handleRegister:", error);
         }
     }
 
     return <div className={styles.authPage}>
-        <div className={styles.leftContainer}>
+        { <div className={styles.leftContainer}>
+            <div className={styles.logo}>
+                <FaCalendarCheck style={{width: 25, height: 25}}/>
+                <h1>QuickBook</h1>
+            </div>
             <div className={styles.leftTabs}>
                 <div
                     id={`panel-${tabs[activeIndex].key}`}
@@ -81,7 +96,7 @@ function AuthPage() {
                     aria-labelledby={`tab-${tabs[activeIndex].key}`}
                     className={styles.tabPanel}
                 >
-                    <h1 className={styles.tabTitle}>{tabs[activeIndex].title}</h1>
+                    <h4 className={styles.tabTitle}>{tabs[activeIndex].title}</h4>
                     <p className={styles.tabBody}>{tabs[activeIndex].body}</p>
                 </div>
                 <div className={styles.tabList} role="tablist" aria-label="About the app">
@@ -105,7 +120,7 @@ function AuthPage() {
                     })}
                 </div>
             </div>
-        </div>
+        </div>}
         <div className={styles.rightContainer}>
             <div className={styles.rightContainerCard}>
                 {authTab === "login" ? (

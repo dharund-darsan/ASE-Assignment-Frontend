@@ -3,8 +3,10 @@ import moment from "moment";
 import Modal from "../../components/Modal/Modal";
 import Button from "../../components/Button/Button";
 import TextInput from "../../components/TextInput/TextInput";
-import Divider from "../../components/Divider/DIvider";
+import Divider from "../Divider/Divider";
 import styles from "./AppointmentModal.module.sass";
+import { showToast } from "../Toast/Toast";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const FREQ_OPTIONS = ["None","Daily","Weekly","Monthly"];
@@ -44,9 +46,12 @@ const AppointmentModal = ({
   const [recurrenceEndDate,setRecurrenceEndDate] = useState(now.clone().add(3,"months").format("YYYY-MM-DD"));
   const [recurrenceEndTime,setRecurrenceEndTime] = useState(now.clone().add(3,"months"));
   const [daysOfWeek,setDaysOfWeek] = useState([]);
+  const [daysOfMonth,setDaysOfMonth] = useState([]);
   const [errors,setErrors] = useState({});
   const [cancelReason, setCancelReason] = useState("");
   const [cancelReasonModalVisibility, setCancelReasonModalVisibility] = useState(false);
+
+  const isMobile = useIsMobile();
 
   const isReadOnly = mode === "view";
 
@@ -71,8 +76,18 @@ const AppointmentModal = ({
       setRecurrenceEndDate(appointment.recurrenceEndDate ? moment(appointment.recurrenceEndDate).format("YYYY-MM-DD") : now.clone().add(3,"months").format("YYYY-MM-DD"));
       setRecurrenceEndTime(appointment.recurrenceEndDate ? moment(appointment.recurrenceEndDate) : now.clone().add(3,"months"));
       setDaysOfWeek(appointment.daysOfWeek || []);
+      setDaysOfMonth(appointment.daysOfMonth || []);
     }
   },[appointment]);
+
+  useEffect(() => {
+    setErrors({});
+    const userDetails = JSON.parse(localStorage.getItem('userDetails'));
+    setUserId(userDetails.userId);
+
+  }, []);
+
+  const [userId, setUserId] = useState('');
 
   const combineDateTime = (dateStr,timeMoment)=>{
     const d = moment(dateStr,"YYYY-MM-DD");
@@ -84,26 +99,77 @@ const AppointmentModal = ({
     setDaysOfWeek(prev=>prev.includes(day)?prev.filter(d=>d!==day):[...prev,day]);
   }
 
+  const toggleDayOfMonth = day=>{
+    if(isReadOnly) return;
+    setDaysOfMonth(prev=>prev.includes(day)?prev.filter(d=>d!==day):[...prev,day]);
+  }
+
   const validate=()=>{
     if(isReadOnly) return true;
-    const newErrors={};
-    if(!title) newErrors.title="Title is required.";
-    const start = moment(combineDateTime(startDate,startTime));
-    const end = moment(combineDateTime(endDate,endTime));
-    if(!start.isValid()) newErrors.start="Start date/time invalid";
-    if(!end.isValid()) newErrors.end="End date/time invalid";
-    if(start.isValid() && end.isValid() && end.isSameOrBefore(start)) newErrors.end="End must be after start";
+    const newErrors = {};
 
-    if(frequency!=="None"){
-      const rStart = moment(combineDateTime(recurrenceStartDate,recurrenceStartTime));
-      const rEnd = moment(combineDateTime(recurrenceEndDate,recurrenceEndTime));
-      if(!rStart.isValid()) newErrors.recurrenceStart="Recurrence start invalid";
-      if(!rEnd.isValid()) newErrors.recurrenceEnd="Recurrence end invalid";
-      if(rStart.isValid() && rEnd.isValid() && rEnd.isBefore(rStart)) newErrors.recurrenceEnd="Recurrence end must be after start";
-      if(frequency==="Weekly" && daysOfWeek.length===0) newErrors.daysOfWeek="Pick at least one day";
-      if(interval<1) newErrors.interval="Interval must be ≥ 1";
+// Title required
+if (!title?.trim()) newErrors.title = "Title is required.";
+
+// Main Start/End validation
+const start = moment(combineDateTime(startDate, startTime));
+const end = moment(combineDateTime(endDate, endTime));
+
+if (!start.isValid()) newErrors.start = "Start date/time invalid";
+if (!end.isValid()) newErrors.end = "End date/time invalid";
+
+if (start.isValid() && end.isValid()) {
+  if (!end.isAfter(start)) {
+    newErrors.end = "End must be after start";
+  }
+}
+
+if (frequency !== "None") {
+  // Recurrence start/end
+  const rStart = moment(combineDateTime(recurrenceStartDate, recurrenceStartTime));
+  const rEnd = moment(combineDateTime(recurrenceEndDate, recurrenceEndTime));
+
+  if (!rStart.isValid()) newErrors.recurrenceStart = "Recurrence start invalid";
+  if (!rEnd.isValid()) newErrors.recurrenceEnd = "Recurrence end invalid";
+
+  if (rStart.isValid() && rEnd.isValid()) {
+    if (!rEnd.isAfter(rStart)) {
+      newErrors.recurrenceEnd = "Recurrence end must be after recurrence start";
     }
-    setErrors(newErrors);
+
+    // 🔥 ensure recurrence window covers the appointment
+    if (start.isValid() && rStart.isAfter(start)) {
+      newErrors.recurrenceStart = "Recurrence start cannot be after appointment start";
+    }
+    if (end.isValid() && rEnd.isBefore(end)) {
+      newErrors.recurrenceEnd = "Recurrence end cannot be before appointment end";
+    }
+  }
+
+  // Interval validation
+  if (!Number.isInteger(interval) || interval < 1) {
+    newErrors.interval = "Interval must be a whole number ≥ 1";
+  }
+
+  // Weekly validation
+  if (frequency === "Weekly") {
+    if (!Array.isArray(daysOfWeek) || daysOfWeek.length === 0) {
+      newErrors.daysOfWeek = "Pick at least one day for weekly recurrence";
+    }
+  }
+}
+
+if (!participantIds.length) newErrors.participantIds = "Select at least one participant";
+
+setErrors(newErrors);
+
+if (Object.keys(newErrors).length > 0) {
+    const firstError = Object.values(newErrors)[0];
+    console.log(firstError)
+    showToast(firstError, 'failure', false);
+    return; // stop submission
+  }
+
     return Object.keys(newErrors).length===0;
   }
 
@@ -111,11 +177,11 @@ const AppointmentModal = ({
     if(!validate()) return;
     const payload={
       appointmentId:appointmentId,
-      organizerId:Number(organizerId),
+      organizerId:Number(userId),
       title:title,
-      description:description.trim(),
+      description:description,
       location:location,
-      meetingLink:meetingLink.trim()||null,
+      meetingLink:meetingLink||null,
       startTime:combineDateTime(startDate,startTime),
       endTime:combineDateTime(endDate,endTime),
       statusId:Number(statusId),
@@ -124,7 +190,8 @@ const AppointmentModal = ({
       interval:Number(interval),
       recurrenceStartDate:frequency==="None"?null:combineDateTime(recurrenceStartDate,recurrenceStartTime),
       recurrenceEndDate:frequency==="None"?null:combineDateTime(recurrenceEndDate,recurrenceEndTime),
-      daysOfWeek:frequency==="Weekly"?daysOfWeek:[]
+      daysOfWeek:frequency==="Weekly"?daysOfWeek:[],
+      daysOfMonth:frequency==="Monthly"?daysOfMonth:[]
     }
     onSubmit?.(payload);
   }
@@ -136,9 +203,12 @@ const AppointmentModal = ({
       mode==="create"?"Create Appointment":
       mode==="edit"?"Edit Appointment":
       "View Appointment"
-    }>
-      <div className={styles.modalContent}>
-        <TextInput
+    }
+    animation="bounceIn"
+    fullScreen
+    >
+      <div className={styles.modalContent} style={{maxHeight: window.innerHeight * (isMobile ? 1 : 0.8) - (isMobile ? 110: 0), overflowY: 'auto'}}>
+        {/* <TextInput
           id="organizerId"
           label="Organizer"
           type="select"
@@ -147,15 +217,15 @@ const AppointmentModal = ({
           options={customers.map(c=>({value:c.value,label:c.label}))}
           placeholder="Select Organizer"
           disabled={isReadOnly}
-        />
+        /> */}
         <TextInput
           id="title"
           label="Title"
           value={title}
           onChange={e=>setTitle(e.target.value)}
           fullWidth
-          error={!!errors.title}
-          helperText={errors.title}
+          // error={!!errors.title}
+          // helperText={errors.title}
           disabled={isReadOnly}
         />
         <TextInput
@@ -168,26 +238,6 @@ const AppointmentModal = ({
           rows={3}
           disabled={isReadOnly}
         />
-        <div className={styles.row2}>
-          <TextInput
-            id="location"
-            label="Location"
-            value={location}
-            onChange={e=>setLocation(e.target.value)}
-            fullWidth
-            disabled={isReadOnly}
-          />
-          <TextInput
-            id="meetingLink"
-            label="Meeting Link"
-            value={meetingLink}
-            onChange={e=>setMeetingLink(e.target.value)}
-            fullWidth
-            placeholder="https://..."
-            disabled={isReadOnly}
-          />
-        </div>
-
         {/* Start / End Date + Time */}
         <div className={styles.row2}>
           <div className={styles.column}>
@@ -198,8 +248,8 @@ const AppointmentModal = ({
               value={startDate}
               onChange={e=>setStartDate(e.target.value)}
               displayValue={moment(startDate).format("MMM DD, YYYY")}
-              helperText={errors.start}
-              error={!!errors.start}
+              // helperText={errors.start}
+              // error={!!errors.start}
               disabled={isReadOnly}
             />
             <TextInput
@@ -219,8 +269,8 @@ const AppointmentModal = ({
               value={endDate}
               onChange={e=>setEndDate(e.target.value)}
               displayValue={moment(endDate).format("MMM DD, YYYY")}
-              helperText={errors.end}
-              error={!!errors.end}
+              // helperText={errors.end}
+              // error={!!errors.end}
               disabled={isReadOnly}
             />
             <TextInput
@@ -276,9 +326,28 @@ const AppointmentModal = ({
             </div>
           )}
 
+          {frequency === "Monthly" && (
+            <div className={styles.daysOfMonthContainer}>
+              {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => {
+                const selected = daysOfMonth.includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleDayOfMonth(day)}
+                    className={`${styles.dayButton} ${selected ? styles.selected : ""}`}
+                    disabled={isReadOnly}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {frequency!=="None" && (
-            <div className={styles.row2}>
-              <div className={styles.column}>
+            <div className={styles.row2} style={{'grid-template-columns': '1fr'}}>
+              {/* <div className={styles.column}>
                 <TextInput
                   id="recurrenceStartDate"
                   label="Recurrence Start Date"
@@ -286,11 +355,11 @@ const AppointmentModal = ({
                   value={recurrenceStartDate}
                   onChange={e=>setRecurrenceStartDate(e.target.value)}
                   displayValue={moment(recurrenceStartDate).format("MMM DD, YYYY")}
-                  error={!!errors.recurrenceStart}
-                  helperText={errors.recurrenceStart}
+                  // error={!!errors.recurrenceStart}
+                  // helperText={errors.recurrenceStart}
                   disabled={isReadOnly}
                 />
-              </div>
+              </div> */}
               <div className={styles.column}>
                 <TextInput
                   id="recurrenceEndDate"
@@ -299,13 +368,32 @@ const AppointmentModal = ({
                   value={recurrenceEndDate}
                   onChange={e=>setRecurrenceEndDate(e.target.value)}
                   displayValue={moment(recurrenceEndDate).format("MMM DD, YYYY")}
-                  error={!!errors.recurrenceEnd}
-                  helperText={errors.recurrenceEnd}
+                  // error={!!errors.recurrenceEnd}
+                  // helperText={errors.recurrenceEnd}
                   disabled={isReadOnly}
                 />
               </div>
             </div>
           )}
+        </div>
+        <div className={styles.row2}>
+          <TextInput
+            id="location"
+            label="Location"
+            value={location}
+            onChange={e=>setLocation(e.target.value)}
+            fullWidth
+            disabled={isReadOnly}
+          />
+          <TextInput
+            id="meetingLink"
+            label="Meeting Link"
+            value={meetingLink}
+            onChange={e=>setMeetingLink(e.target.value)}
+            fullWidth
+            placeholder="https://..."
+            disabled={isReadOnly}
+          />
         </div>
       </div>
 
@@ -337,7 +425,7 @@ const AppointmentModal = ({
             modalBody={styles['cancel-reason-modal']}
             title={"Cancel Appointment"}
           >
-            <div style={{maxHeight: window.innerHeight * 0.8, overflowY: 'auto'}} className={styles.cancelModalContent}>
+            <div style={{maxHeight: window.innerHeight * (0.8), overflowY: 'auto'}} className={styles.cancelModalContent}>
               <TextInput
                 id="cancelReason"
                 label="Cancel Reason"

@@ -62,10 +62,12 @@
 
 .tabPanel
     text-align: center
+    
 
 .tabTitle
     font-size: 2rem
     margin: 0 0 .5rem 0
+    font-weight: 400
 
 .tabBody
     font-size: 1.05rem
@@ -111,3 +113,23 @@
 
     &:hover
         color: $primary
+.logo
+    display: flex
+    flex-direction: row
+    justify-content: center
+    align-items: center
+    gap: 8px
+
+@media ( max-width:  768px)
+    .authPage
+        flex-direction: column
+    .rightContainer
+        width: 100%
+        justify-content: flex-start
+    .leftContainer
+        width: 100%
+        height: 25%
+    
+
+    .rightContainerCard
+        width: 100%
